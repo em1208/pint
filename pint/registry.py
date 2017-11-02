@@ -407,6 +407,7 @@ class BaseRegistry(meta.with_metaclass(_Meta)):
     def _build_cache(self):
         """Build a cache of dimensionality and base units.
         """
+        self._dimensional_equivalents = dict()
 
         deps = dict((name, set(definition.reference.keys() if definition.reference else {}))
                     for name, definition in self._units.items())
@@ -1096,8 +1097,8 @@ class ContextRegistry(BaseRegistry):
             kwargs = dict(self._active_ctx.defaults, **kwargs)
 
         # For each name, we first find the corresponding context
-        ctxs = tuple((self._contexts[name] if isinstance(name, string_types) else name)
-                     for name in names_or_contexts)
+        ctxs = list((self._contexts[name] if isinstance(name, string_types) else name)
+                    for name in names_or_contexts)
 
         # Check if the contexts have been checked first, if not we make sure
         # that dimensions are expressed in terms of base dimensions.
@@ -1118,6 +1119,7 @@ class ContextRegistry(BaseRegistry):
 
         # Finally we add them to the active context.
         self._active_ctx.insert_contexts(*ctxs)
+        self._build_cache()
 
     def disable_contexts(self, n=None):
         """Disable the last n enabled contexts.
@@ -1125,6 +1127,7 @@ class ContextRegistry(BaseRegistry):
         if n is None:
             n = len(self._contexts)
         self._active_ctx.remove_contexts(n)
+        self._build_cache()
 
     @contextmanager
     def context(self, *names, **kwargs):
@@ -1248,7 +1251,6 @@ class ContextRegistry(BaseRegistry):
 
         if self._active_ctx:
             nodes = find_connected_nodes(self._active_ctx.graph, src_dim)
-            ret = set()
             if nodes:
                 for node in nodes:
                     ret |= self._dimensional_equivalents[node]
