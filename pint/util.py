@@ -208,6 +208,8 @@ def find_shortest_path(graph, start, end, path=None):
     if not start in graph:
         return None
     shortest = None
+    if end in graph[start]:
+        return path + [end]
     for node in graph[start]:
         if node not in path:
             newpath = find_shortest_path(graph, node, end, path)
